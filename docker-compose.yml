@@ -1,0 +1,52 @@
+version: "2.2"
+
+services:
+  mongo:
+    image: "mongo:3"
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - graylog2
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.5.1
+    networks:
+      - graylog2
+    volumes:
+      - elastic:/usr/share/elasticsearch/data
+    environment:
+      - http.host=0.0.0.0
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+  graylog:
+    image: graylog/graylog:2.3.0-1
+    networks:
+      - graylog2
+    volumes:
+      - graylog:/usr/share/graylog/data/journal
+    environment:
+      GRAYLOG_WEB_ENDPOINT_URI: http://127.0.0.1:9000/api
+      GRAYLOG_MONGODB_URI: mongodb://mongo/graylog
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
+    depends_on:
+      - mongo
+      - elasticsearch
+    ports:
+      - "9000:9000"
+      - "12201:12201"
+      - "12201:12201/udp"
+      - "5555:5555"
+      - "5555:5555/udp"
+      - "3333:3333"
+
+networks:
+  graylog2:
+volumes:
+  mongodb:
+  elastic:
+  graylog:
